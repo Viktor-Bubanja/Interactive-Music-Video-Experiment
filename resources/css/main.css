@@ -1,0 +1,39 @@
+.button{
+    position: absolute;
+    display: block;
+    z-index: 99;
+}
+
+#kick{
+    left: 40%;
+    top: 50%;
+}
+
+#snare{
+     left: 50%;
+     top: 50%;
+ }
+
+#song1{
+    left: 40%;
+    top: 50%;
+}
+
+#song2 {
+    left: 60%;
+    top: 50%;
+}
+
+#detuner {
+    left: 50%;
+    top: 40%;
+}
+
+#detuner {
+    left: 30%;
+    top: 40%;
+}
+
+#click_text {
+    display: none;
+}
