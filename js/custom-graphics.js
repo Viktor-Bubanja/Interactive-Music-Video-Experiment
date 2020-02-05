@@ -1,6 +1,5 @@
 import * as THREE from '../build/three.module.js';
 
-
 let scene, camera, renderer, listener;
 let group;
 let songPart1, songPart2, analyserPart1, analyserPart2;
@@ -16,13 +15,25 @@ function init() {
 
     group = new THREE.Group();
 
+    renderer = new THREE.WebGLRenderer( { antialias: true } );
+    renderer.shadowMap.enabled = true;
+    renderer.setPixelRatio( window.devicePixelRatio );
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setClearColor( 0x000000 );
+    window.addEventListener( 'resize', onWindowResize, false );
+    document.body.appendChild( renderer.domElement );
+
+    renderer.localClippingEnabled = true;
+
+
+
     initialiseLight();
     initialiseSound();
     initialiseAudioAnalyserPart1();
     initialiseAudioAnalyserPart2();
-    initialiseRenderer();
     initialiseKeysSlider();
 }
+
 
 function initialiseSound() {
     listener = new THREE.AudioListener();
@@ -71,9 +82,7 @@ function initialiseKeysSlider() {
 
     let slider = document.getElementById("keys");
     slider.oninput = function() {
-        console.log(key1);
         for (const key of keys) {
-            console.log(key)
             if (key.isPlaying === true) {
                 key.stop();
             }
@@ -95,6 +104,7 @@ function initialisePlaybackSlider() {
     let slider = document.getElementById("detuner");
     slider.oninput = function() {
         songPart1.setPlaybackRate(Math.pow(slider.value / 50, 0.5));
+        group.rotation.x = -1 * (group.rotation.x + 50 - slider.value) / 1000;
     }
 }
 
@@ -127,7 +137,6 @@ function animateFirstSection() {
     let data = analyserPart1.getAverageFrequency() / 10;
     dot.position.set(((Math.random() * 2) - 1) * data, Math.random() * data, -1 * Math.random() * data);
 
-
     group.add(dot);
     scene.add(group);
 
@@ -136,26 +145,25 @@ function animateFirstSection() {
 }
 
 function animateSecondSection() {
-    var frequencyData = analyserPart2.getFrequencyData();
-    var avgVolume = (frequencyData.reduce((a, b) => a + b, 0)) / 1000;
+    let frequencyData = analyserPart2.getFrequencyData();
+    let avgVolume = (frequencyData.reduce((a, b) => a + b, 0));
+    let avgFrequency = analyserPart2.getAverageFrequency();
+    console.log(Math.random() * avgFrequency);
 
-    group.rotation.x =  avgVolume / 10;
+    for (const dot of group.children) {
+
+        dot.material.color.setRGB(
+            Math.min(-dot.position.z * avgFrequency / 100, 255),
+            Math.min(dot.position.y  * avgFrequency / 100, 255),
+            Math.min(dot.position.y  * avgFrequency / 100), 255);
+    }
+
+    group.rotation.x =  avgVolume / 10000;
 
     requestAnimationFrame(animateSecondSection);
     renderer.render(scene, camera);
 }
 
-function initialiseRenderer() {
-    renderer = new THREE.WebGLRenderer( { antialias: true } );
-    renderer.shadowMap.enabled = true;
-    renderer.setPixelRatio( window.devicePixelRatio );
-    renderer.setSize( window.innerWidth, window.innerHeight );
-    renderer.setClearColor( 0x263238 );
-    window.addEventListener( 'resize', onWindowResize, false );
-    document.body.appendChild( renderer.domElement );
-
-    renderer.localClippingEnabled = true;
-}
 
 function initialiseLight() {
     scene.add(new THREE.AmbientLight(0xffffff, 0.5 ));
