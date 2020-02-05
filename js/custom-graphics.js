@@ -1,9 +1,11 @@
 import * as THREE from '../build/three.module.js';
 
-let scene, camera, renderer;
+
+let scene, camera, renderer, listener;
 let group;
 let songPart1, songPart2, analyserPart1, analyserPart2;
 let secondAct = false;
+
 
 init();
 
@@ -19,37 +21,33 @@ function init() {
     initialiseAudioAnalyserPart1();
     initialiseAudioAnalyserPart2();
     initialiseRenderer();
+    initialiseKeysSlider();
 }
 
 function initialiseSound() {
-    let listener = new THREE.AudioListener();
+    listener = new THREE.AudioListener();
     camera.add(listener);
-
     songPart1 = new THREE.Audio(listener);
     songPart2 = new THREE.Audio(listener);
 
     document.getElementById('song1').addEventListener('click', function() {
         let audioLoader = new THREE.AudioLoader();
-        songPart1 = new THREE.Audio(listener);
+
+        initialisePlaybackSlider();
+        initialiseFilterSlider();
         audioLoader.load("resources/sounds/supine_part1.mp3", function(buffer) {
             songPart1.setBuffer(buffer);
             songPart1.play();
-
             initialiseAudioAnalyserPart1();
             animateFirstSection();
         });
-
-        let slider = document.getElementById("detuner");
-        slider.oninput = function() {
-            songPart1.setPlaybackRate(Math.pow(slider.value / 50, 0.5));
-            console.log(slider.value);
-        }
     });
 
     document.getElementById('song2').addEventListener('click', function() {
         secondAct = true;
         let audioLoader = new THREE.AudioLoader();
-        songPart2 = new THREE.Audio(listener);
+
+        initialiseFilterSlider();
         audioLoader.load("resources/sounds/supine_part2.mp3", function(buffer) {
             songPart2.setBuffer(buffer);
             songPart2.play();
@@ -58,6 +56,58 @@ function initialiseSound() {
             animateSecondSection();
         });
     });
+}
+
+function initialiseKeysSlider() {
+    const audioLoader = new THREE.AudioLoader();
+    const key1 = loadSound(audioLoader, "resources/sounds/keys/E.mp3");
+    const key2 = loadSound(audioLoader, "resources/sounds/keys/A.mp3");
+    const key3 = loadSound(audioLoader, "resources/sounds/keys/B.mp3");
+    const key4 = loadSound(audioLoader, "resources/sounds/keys/C.mp3");
+    const key5 = loadSound(audioLoader, "resources/sounds/keys/C2.mp3");
+    const key6 = loadSound(audioLoader, "resources/sounds/keys/E2.mp3");
+    const key7 = loadSound(audioLoader, "resources/sounds/keys/F.mp3");
+    const keys = [key1, key2, key3, key4, key5, key6, key7];
+
+    let slider = document.getElementById("keys");
+    slider.oninput = function() {
+        console.log(key1);
+        for (const key of keys) {
+            console.log(key)
+            if (key.isPlaying === true) {
+                key.stop();
+            }
+        }
+        keys[slider.value].play();
+    };
+}
+
+function loadSound(audioLoader, path) {
+    let audio = new THREE.Audio(listener);
+    audioLoader.load(path, function(buffer) {
+        audio.setBuffer(buffer);
+    });
+    return audio;
+}
+
+
+function initialisePlaybackSlider() {
+    let slider = document.getElementById("detuner");
+    slider.oninput = function() {
+        songPart1.setPlaybackRate(Math.pow(slider.value / 50, 0.5));
+    }
+}
+
+function initialiseFilterSlider() {
+    let slider = document.getElementById("filter");
+    // let audioContext = new AudioContext();
+    let filter = songPart1.context.createBiquadFilter();
+    songPart1.setFilter(filter);
+    filter.type = "lowpass";
+    filter.frequency.value = 10000;
+    slider.oninput = function() {
+        filter.frequency.value = slider.value
+    };
 }
 
 function initialiseAudioAnalyserPart1() {
