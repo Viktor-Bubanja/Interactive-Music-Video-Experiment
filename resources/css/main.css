@@ -29,8 +29,13 @@
     top: 40%;
 }
 
-#detuner {
+#filter {
     left: 30%;
+    top: 40%;
+}
+
+#keys {
+    left: 10%;
     top: 40%;
 }
 
