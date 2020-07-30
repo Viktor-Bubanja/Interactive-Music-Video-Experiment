@@ -11,7 +11,8 @@ init();
 function init() {
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(36, window.innerWidth / window.innerHeight, 1, 100);
-    camera.position.set(0,0,5);
+    camera.position.set(0,0,0);
+    camera.lookAt(0, 0, 10);
 
     group = new THREE.Group();
 
@@ -25,10 +26,9 @@ function init() {
 
     renderer.localClippingEnabled = true;
 
-
-
     initialiseLight();
     initialiseSound();
+    animateSwarm();
     initialiseAudioAnalyserPart1();
     initialiseAudioAnalyserPart2();
     initialiseKeysSlider();
@@ -40,6 +40,14 @@ function initialiseSound() {
     camera.add(listener);
     songPart1 = new THREE.Audio(listener);
     songPart2 = new THREE.Audio(listener);
+
+    document.getElementById('pauseSong1').addEventListener('click', function() {
+        songPart1.pause();
+    })
+
+    document.getElementById('pauseSong2').addEventListener('click', function() {
+        songPart2.pause();
+    })
 
     document.getElementById('song1').addEventListener('click', function() {
         let audioLoader = new THREE.AudioLoader();
@@ -130,35 +138,63 @@ function initialiseAudioAnalyserPart2() {
     analyserPart2 = new THREE.AudioAnalyser(songPart2, fftSize);
 }
 
+
+function animateSwarm() {
+    let geom = new THREE.Geometry();
+    let v1 = new THREE.Vector3(0, 20, 0);
+    let v2 = new THREE.Vector3(5, 20, 0);
+    let v3 = new THREE.Vector3(5, 20, -5);
+    let triangle = new THREE.Triangle(v1, v2, v3);
+    let normal = triangle.getNormal();
+    geom.vertices.push(triangle.a);
+    geom.vertices.push(triangle.b);
+    geom.vertices.push(triangle.c);
+    geom.faces.push(new THREE.Face3(0, 1, 2, normal));
+    let mesh = new THREE.Mesh(geom, new THREE.MeshNormalMaterial());
+    scene.add(mesh);
+    requestAnimationFrame(animateSwarm);
+    renderer.render(scene, camera);
+}
+
 function animateFirstSection() {
-    let geometry = new THREE.BoxGeometry(0.01, 0.01, 0.01);
+    let geometry = new THREE.SphereGeometry(0.01, 10, 10);
     let material = new THREE.MeshBasicMaterial({color: 0xff0051});
     let dot = new THREE.Mesh(geometry, material);
     let data = analyserPart1.getAverageFrequency() / 10;
-    dot.position.set(((Math.random() * 2) - 1) * data, Math.random() * data, -1 * Math.random() * data);
+    dot.position.set(
+        ((Math.random() * 2) - 1) * data,
+        Math.random() * data - 5,
+        (Math.random() * data + 10) % 100);
+    console.log(dot.position)
+    //
+    // dot.position.set(0, 10, 10)
 
     group.add(dot);
     scene.add(group);
 
-    requestAnimationFrame(animateFirstSection);
-    renderer.render(scene, camera);
+    setTimeout(function() {
+        requestAnimationFrame(animateFirstSection);
+        renderer.render(scene, camera);
+        }, 200);
+
 }
 
 function animateSecondSection() {
     let frequencyData = analyserPart2.getFrequencyData();
     let avgVolume = (frequencyData.reduce((a, b) => a + b, 0));
     let avgFrequency = analyserPart2.getAverageFrequency();
-    console.log(Math.random() * avgFrequency);
 
     for (const dot of group.children) {
-
-        dot.material.color.setRGB(
-            Math.min(-dot.position.z * avgFrequency / 100, 255),
-            Math.min(dot.position.y  * avgFrequency / 100, 255),
-            Math.min(dot.position.y  * avgFrequency / 100), 255);
+        console.log(dot.position.y);
+        if (dot.position.y > 7) {
+            let red = Math.min(Math.max(0.7, dot.position.y * avgFrequency / 1000), 0.95);
+            let green = Math.min(Math.max(0.3, Math.random() * dot.position.y * avgFrequency / 1500), 0.6);
+            let blue = Math.min(Math.max(0.3, Math.random() * dot.position.y * avgFrequency / 1500), 0.6);
+            dot.material.color.setRGB(red, green, blue);
+        }
     }
 
-    group.rotation.x =  avgVolume / 10000;
+    group.rotation.x =  avgVolume / 80000;
 
     requestAnimationFrame(animateSecondSection);
     renderer.render(scene, camera);
@@ -184,5 +220,4 @@ function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize( window.innerWidth, window.innerHeight );
-
 }
