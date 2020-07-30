@@ -24,6 +24,16 @@
     top: 50%;
 }
 
+#pauseSong1{
+    left: 40%;
+    top: 70%;
+}
+
+#pauseSong2 {
+    left: 60%;
+    top: 70%;
+}
+
 #detuner {
     left: 50%;
     top: 40%;
